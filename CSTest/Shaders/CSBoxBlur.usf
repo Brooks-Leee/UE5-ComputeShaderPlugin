@@ -1,0 +1,46 @@
+
+#include "/Engine/Public/Platform.ush"
+
+uint Step;
+Texture2D InputTexture;
+RWTexture2D<float4> OutputTexture;
+
+groupshared float4 gCache[THREADGROUP_SIZEX][THREADGROUP_SIZEY];
+
+[numthreads(THREADGROUP_SIZEX, THREADGROUP_SIZEY, 1)]
+void BoxBlurCS(int3 groupThreadID : SV_GroupThreadID,
+               int3 dispatchThreadID : SV_DispatchThreadID)
+{
+    gCache[groupThreadID.x][groupThreadID.y] = InputTexture[dispatchThreadID.xy];
+    
+    GroupMemoryBarrierWithGroupSync();
+    
+    int2 uv_offset[9] =
+    {
+        int2(-1, -1),
+        int2(-1, 0),
+        int2(-1, 1),
+        int2(0, -1),
+        int2(0, 0),
+        int2(0, 1),
+        int2(1, -1),
+        int2(1, 0),
+        int2(1, 1)
+    };
+ 
+    
+    
+    float4 result = float4(0, 0, 0, 0);
+    
+    for (int i = 0; i < 9; i++)
+    {
+        //result += gCache[groupThreadID.x + uv_offset[i].x * Step][groupThreadID.y + uv_offset[i].y * Step] * 0.11;
+        
+        result += InputTexture[dispatchThreadID.xy + uv_offset[i] * Step] * 0.11;
+    }
+
+    
+    //OutputTexture[dispatchThreadID.xy] = 1;
+    OutputTexture[dispatchThreadID.xy] = result;
+}
+
